@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>Psychedelic Liquid Fractal - Mind Meditation</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #000000;
+      font-family: 'Outfit', sans-serif;
+    }
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      touch-action: none;
+    }
+    .glass-panel {
+      background: rgba(10, 6, 20, 0.78);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      box-shadow: 0 12px 35px -5px rgba(0, 0, 0, 0.85), 0 0 18px rgba(255, 0, 128, 0.25);
+    }
+    .neon-glow-btn {
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 0 12px rgba(255, 0, 150, 0.35);
+    }
+    .neon-glow-btn:hover {
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.7), 0 0 35px rgba(255, 0, 150, 0.5);
+      transform: translateY(-1px) scale(1.02);
+    }
+    .neon-glow-btn:active {
+      transform: scale(0.97);
+    }
+    .title-font {
+      font-family: 'Fredoka One', cursive, sans-serif;
+      background: linear-gradient(135deg, #FF007F, #FFE600, #00F5D4, #7928CA);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    input[type=range] {
+      accent-color: #f72585;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="relative w-screen h-screen overflow-hidden bg-black select-none">
+
+  <!-- WebGL Main Rendering Canvas -->
+  <canvas id="glcanvas" class="absolute inset-0 z-0"></canvas>
+
+  <!-- Ambient Touch Hint / Start Prompt Overlay -->
+  <div id="startOverlay" class="absolute inset-0 z-20 flex flex-col items-center justify-center pointer-events-none transition-opacity duration-700 p-6 text-center">
+    <div class="glass-panel px-8 py-7 rounded-3xl max-w-md pointer-events-auto cursor-pointer border border-pink-500/40 animate-pulse shadow-2xl" id="dismissOverlayBtn">
+      <h1 class="text-3xl sm:text-4xl font-bold title-font tracking-wide mb-2 drop-shadow-md">PSYCHEDELIC FLOW</h1>
+      <p class="text-pink-100/90 text-sm sm:text-base leading-relaxed mb-5">
+        画面をクリックまたは指でなぞると、色彩のフラクタル波紋が広がり、倍音豊かな瞑想ベルが響きます。
+      </p>
+      <div class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 text-white font-semibold text-sm shadow-lg shadow-pink-500/35 hover:brightness-110">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+        <span>タップして開始 (音声を有効化)</span>
+      </div>
+    </div>
+  </div>
+
+  <header class="absolute top-4 left-4 right-4 z-10 flex items-center justify-between pointer-events-none">
+    <div class="glass-panel px-4 py-2 rounded-2xl flex items-center space-x-2 pointer-events-auto border-pink-500/25">
+      <span class="w-3 h-3 rounded-full bg-pink-500 animate-ping inline-block"></span>
+      <span class="title-font font-bold text-lg tracking-wider hidden sm:inline">PsycheMind</span>
+      <span class="text-xs text-white/80 font-medium sm:border-l sm:border-white/20 sm:pl-2">60's Liquid Ripple</span>
+    </div>
+
+    <!-- Quick action buttons -->
+    <div class="flex items-center gap-2 pointer-events-auto">
+      <!-- Audio Toggle -->
+      <button id="soundToggleBtn" aria-label="Toggle Sound" class="glass-panel p-2.5 sm:px-3 sm:py-2 rounded-2xl text-white hover:text-pink-300 transition flex items-center gap-1.5 neon-glow-btn">
+        <svg id="soundIconOn" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+        </svg>
+        <svg id="soundIconOff" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 hidden text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+        </svg>
+        <span class="text-xs font-semibold hidden md:inline" id="soundLabel">サウンド ON</span>
+      </button>
+
+      <!-- Settings Panel Toggle -->
+      <button id="toggleControlsBtn" aria-label="Toggle Settings" class="glass-panel p-2.5 sm:px-3 sm:py-2 rounded-2xl text-white hover:text-yellow-300 transition flex items-center gap-1.5 neon-glow-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+        </svg>
+        <span class="text-xs font-semibold hidden md:inline">調整</span>
+      </button>
+
+      <!-- Fullscreen Toggle -->
+      <button id="fullscreenBtn" aria-label="Fullscreen Mode" class="glass-panel p-2.5 rounded-2xl text-white hover:text-cyan-300 transition neon-glow-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <aside id="controlsDrawer" class="absolute right-4 top-20 z-10 w-84 sm:w-96 glass-panel rounded-3xl p-5 text-white transition-all duration-300 shadow-2xl border-pink-500/25 max-h-[85vh] overflow-y-auto custom-scrollbar hidden">
+    <!-- Header with Close Button -->
+    <div class="flex items-center justify-between pb-3 border-b border-white/10">
+      <div class="flex items-center gap-2">
+        <button id="tabVisualBtn" class="px-3 py-1.5 rounded-xl text-xs font-bold transition bg-pink-500/80 text-white shadow">
+          🎨 ビジュアル
+        </button>
+        <button id="tabAudioBtn" class="px-3 py-1.5 rounded-xl text-xs font-bold transition bg-white/10 text-white/70 hover:bg-white/20">
+          🎵 サウンド調整
+        </button>
+      </div>
+      <button id="closeDrawerBtn" class="text-white/60 hover:text-white p-1 rounded-lg hover:bg-white/10 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <div id="visualTabPanel" class="mt-4 space-y-4">
+      <div>
+        <label class="text-xs text-white/80 font-semibold mb-2 block">カラーパレット（即時反映）</label>
+        <div class="grid grid-cols-2 gap-2" id="paletteButtons">
+          <button data-palette="0" class="palette-btn ring-2 ring-white shadow-lg px-2.5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-yellow-300 via-pink-500 to-cyan-400 text-black">
+            画像再現 (60s Pop)
+          </button>
+          <button data-palette="1" class="palette-btn ring-1 ring-white/20 px-2.5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-600 via-pink-500 to-indigo-500 text-white">
+            ディープバイオレット
+          </button>
+          <button data-palette="2" class="palette-btn ring-1 ring-white/20 px-2.5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-green-400 via-yellow-300 to-emerald-600 text-black">
+            アシッドライム
+          </button>
+          <button data-palette="3" class="palette-btn ring-1 ring-white/20 px-2.5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-orange-500 via-rose-500 to-amber-300 text-black">
+            サイケサンセット
+          </button>
+          <button data-palette="4" class="palette-btn ring-1 ring-white/20 px-2.5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-cyan-400 via-fuchsia-500 to-blue-500 text-white">
+            ネオンコズミック
+          </button>
+          <button data-palette="5" class="palette-btn ring-1 ring-white/20 px-2.5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-red-400 via-emerald-400 to-blue-400 text-black">
+            トリッピーレインボー
+          </button>
+        </div>
+      </div>
+
+      <div class="space-y-3.5 text-xs">
+        <div>
+          <div class="flex justify-between mb-1">
+            <span class="text-white/70">流動スピード</span>
+            <span id="speedValue" class="text-pink-300 font-mono">1.0x</span>
+          </div>
+          <input type="range" id="speedSlider" min="0.2" max="2.5" step="0.1" value="1.0" class="w-full cursor-pointer h-1.5 bg-white/20 rounded-lg">
+        </div>
+
+        <div>
+          <div class="flex justify-between mb-1">
+            <span class="text-white/70">縞模様・リキッド密度</span>
+            <span id="freqValue" class="text-cyan-300 font-mono">1.0x</span>
+          </div>
+          <input type="range" id="freqSlider" min="0.5" max="2.5" step="0.1" value="1.0" class="w-full cursor-pointer h-1.5 bg-white/20 rounded-lg">
+        </div>
+
+        <div>
+          <div class="flex justify-between mb-1">
+            <span class="text-white/70">宇宙星屑ボイドの深さ</span>
+            <span id="voidValue" class="text-yellow-300 font-mono">標準</span>
+          </div>
+          <input type="range" id="voidSlider" min="0.0" max="1.0" step="0.05" value="0.45" class="w-full cursor-pointer h-1.5 bg-white/20 rounded-lg">
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="pt-2 border-t border-white/10 flex gap-2">
+        <button id="burstBtn" class="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-xs font-bold text-white hover:brightness-110 active:scale-95 transition shadow-md">
+          中央バースト波
+        </button>
+        <button id="clearBtn" class="py-2 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-medium text-white/80 active:scale-95 transition">
+          リセット
+        </button>
+      </div>
+    </div>
+
+    <div id="audioTabPanel" class="mt-4 space-y-4 hidden">
+      <!-- Master and Drone Volume -->
+      <div class="space-y-3.5 text-xs">
+        <div>
+          <div class="flex justify-between mb-1">
+            <span class="text-white/70">マスター音量</span>
+            <span id="masterVolVal" class="text-pink-300 font-mono">75%</span>
+          </div>
+          <input type="range" id="masterVolSlider" min="0.0" max="1.0" step="0.05" value="0.75" class="w-full cursor-pointer h-1.5 bg-white/20 rounded-lg">
+        </div>
+
+        <div>
+          <div class="flex justify-between mb-1">
+            <span class="text-white/70">瞑想ドローン音量 (BGM)</span>
+            <span id="droneVolVal" class="text-cyan-300 font-mono">60%</span>
+          </div>
+          <input type="range" id="droneVolSlider" min="0.0" max="1.0" step="0.05" value="0.6" class="w-full cursor-pointer h-1.5 bg-white/20 rounded-lg">
+        </div>
+      </div>
+
+      <!-- Healing Tuning Frequencies -->
+      <div>
+        <label class="text-xs text-white/80 font-semibold mb-2 block">ヒーリング周波数（基音）</label>
+        <div class="grid grid-cols-2 gap-2" id="freqBaseButtons">
+          <button data-base="432" class="freq-btn active py-2 rounded-xl text-xs font-semibold bg-white/20 ring-1 ring-white/60 text-white">
+            432 Hz (自然調和・癒し)
+          </button>
+          <button data-base="528" class="freq-btn py-2 rounded-xl text-xs font-semibold bg-white/5 ring-1 ring-white/10 text-white/70">
+            528 Hz (奇跡の愛)
+          </button>
+        </div>
+      </div>
+
+      <!-- Timbre and Scale Modes -->
+      <div>
+        <label class="text-xs text-white/80 font-semibold mb-1 block">音色・スケールモード</label>
+        <select id="scaleSelect" class="w-full bg-black/50 border border-white/20 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-pink-500">
+          <option value="bell">🔔 チベット瞑想ベル (Tibetan Chime)</option>
+          <option value="pentatonic">✨ 東洋ペンタトニック (Oriental Zen)</option>
+          <option value="bowl">🔮 水晶シンギングボウル (Crystal Bowl)</option>
+          <option value="cosmic">🌌 コズミックシンセ (Cosmic Wave)</option>
+        </select>
+      </div>
+
+      <!-- Decay / Reverb Duration -->
+      <div>
+        <div class="flex justify-between mb-1 text-xs">
+          <span class="text-white/70">残響の長さ (ディケイ)</span>
+          <span id="decayVal" class="text-yellow-300 font-mono">2.8秒</span>
+        </div>
+        <input type="range" id="decaySlider" min="1.0" max="6.0" step="0.2" value="2.8" class="w-full cursor-pointer h-1.5 bg-white/20 rounded-lg">
+      </div>
+
+      <!-- Auto Meditation Toggle -->
+      <div class="flex items-center justify-between pt-2 border-t border-white/10 text-xs">
+        <span class="text-white/80">自動瞑想演奏 (アイドル時)</span>
+        <label class="relative inline-flex items-center cursor-pointer">
+          <input type="checkbox" id="autoModeToggle" checked class="sr-only peer">
+          <div class="w-9 h-5 bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-pink-500"></div>
+        </label>
+      </div>
+    </div>
+  </aside>
+
+  <script>
+    class AmbientChimesSynth {
+      constructor() {
+        this.ctx = null;
+        this.masterGain = null;
+        this.droneGain = null;
+        this.droneOscs = [];
+        this.isPlaying = false;
+        this.muted = false;
+        this.masterVolume = 0.75;
+        this.droneVolume = 0.6;
+        this.baseFreq = 432;
+        this.timbreMode = 'bell';
+        this.decayTime = 2.8;
+
+        this.updateScale();
+      }
+
+      updateScale() {
+        const ratio = this.baseFreq / 432;
+        // Pentatonic frequencies in Hz calibrated with base tuning
+        this.scale = [
+          146.83 * ratio, 164.81 * ratio, 216.00 * ratio, 246.94 * ratio,
+          288.00 * ratio, 324.00 * ratio, 432.00 * ratio, 486.00 * ratio,
+          576.00 * ratio, 648.00 * ratio, 864.00 * ratio
+        ];
+      }
+
+      init() {
+        if (this.ctx) {
+          if (this.ctx.state === 'suspended') this.ctx.resume();
+          return;
+        }
+
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new AudioContext();
+
+        // Master Gain
+        this.masterGain = this.ctx.createGain();
+        this.masterGain.gain.setValueAtTime(this.muted ? 0 : this.masterVolume, this.ctx.currentTime);
+        this.masterGain.connect(this.ctx.destination);
+
+        // Drone Subsystem
+        this.droneGain = this.ctx.createGain();
+        this.droneGain.gain.setValueAtTime(this.droneVolume * 0.12, this.ctx.currentTime);
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(450, this.ctx.currentTime);
+
+        this.droneGain.connect(filter);
+        filter.connect(this.masterGain);
+
+        // Root, Fifth, Octave Drone Chords
+        const droneFrequencies = [this.baseFreq * 0.25, this.baseFreq * 0.375, this.baseFreq * 0.5];
+        droneFrequencies.forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+
+          // Subtle LFO vibrato
+          const lfo = this.ctx.createOscillator();
+          const lfoGain = this.ctx.createGain();
+          lfo.frequency.value = 0.12 + idx * 0.05;
+          lfoGain.gain.value = 1.0;
+          lfo.connect(osc.frequency);
+          lfo.start();
+
+          osc.connect(this.droneGain);
+          osc.start();
+          this.droneOscs.push(osc);
+        });
+
+        this.isPlaying = true;
+      }
+
+      setMasterVolume(val) {
+        this.masterVolume = Math.max(0, Math.min(1, val));
+        if (this.masterGain && !this.muted) {
+          this.masterGain.gain.setTargetAtTime(this.masterVolume, this.ctx.currentTime, 0.05);
+        }
+      }
+
+      setDroneVolume(val) {
+        this.droneVolume = Math.max(0, Math.min(1, val));
+        if (this.droneGain && !this.muted) {
+          this.droneGain.gain.setTargetAtTime(this.droneVolume * 0.12, this.ctx.currentTime, 0.05);
+        }
+      }
+
+      setBaseFreq(base) {
+        this.baseFreq = base;
+        this.updateScale();
+        if (this.ctx && this.droneOscs.length === 3) {
+          const freqs = [this.baseFreq * 0.25, this.baseFreq * 0.375, this.baseFreq * 0.5];
+          this.droneOscs.forEach((osc, i) => {
+            osc.frequency.setTargetAtTime(freqs[i], this.ctx.currentTime, 0.5);
+          });
+        }
+      }
+
+      toggleMute() {
+        if (!this.ctx) {
+          this.init();
+          return false;
+        }
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+        this.muted = !this.muted;
+        if (this.masterGain) {
+          this.masterGain.gain.setTargetAtTime(this.muted ? 0 : this.masterVolume, this.ctx.currentTime, 0.05);
+        }
+        return this.muted;
+      }
+
+      playRippleNote(intensity = 0.5, normalizedY = 0.5) {
+        if (!this.ctx || this.muted) return;
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+
+        const now = this.ctx.currentTime;
+        const index = Math.floor((1.0 - normalizedY) * (this.scale.length - 1));
+        const freq = this.scale[Math.max(0, Math.min(this.scale.length - 1, index))];
+
+        const duration = this.decayTime;
+        const noteGain = this.ctx.createGain();
+        const peakGain = Math.min(0.28, 0.06 + intensity * 0.16);
+
+        noteGain.gain.setValueAtTime(0.0001, now);
+        noteGain.gain.exponentialRampToValueAtTime(peakGain, now + 0.03);
+        noteGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+        noteGain.connect(this.masterGain);
+
+        if (this.timbreMode === 'bell') {
+          // Fundamental + Inharmonic metallic partials
+          const osc1 = this.ctx.createOscillator();
+          const osc2 = this.ctx.createOscillator();
+          osc1.type = 'sine';
+          osc1.frequency.setValueAtTime(freq, now);
+          osc2.type = 'sine';
+          osc2.frequency.setValueAtTime(freq * 2.76, now);
+
+          const partialGain = this.ctx.createGain();
+          partialGain.gain.setValueAtTime(0.35, now);
+          osc2.connect(partialGain);
+          partialGain.connect(noteGain);
+          osc1.connect(noteGain);
+
+          osc1.start(now);
+          osc2.start(now);
+          osc1.stop(now + duration + 0.1);
+          osc2.stop(now + duration + 0.1);
+
+        } else if (this.timbreMode === 'bowl') {
+          // Singing Bowl: Pure sine with slow vibrato
+          const osc = this.ctx.createOscillator();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now);
+
+          const lfo = this.ctx.createOscillator();
+          const lfoG = this.ctx.createGain();
+          lfo.frequency.value = 4.5;
+          lfoG.gain.value = 1.8;
+          lfo.connect(osc.frequency);
+          lfo.start(now);
+
+          osc.connect(noteGain);
+          osc.start(now);
+          osc.stop(now + duration + 0.1);
+          lfo.stop(now + duration + 0.1);
+
+        } else if (this.timbreMode === 'cosmic') {
+          // Cosmic Synth: Triangle with lowpass sweep
+          const osc = this.ctx.createOscillator();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(freq * 0.5, now);
+
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(1200, now);
+          filter.frequency.exponentialRampToValueAtTime(180, now + duration);
+
+          osc.connect(filter);
+          filter.connect(noteGain);
+          osc.start(now);
+          osc.stop(now + duration + 0.1);
+
+        } else {
+          // Oriental Pentatonic sine
+          const osc = this.ctx.createOscillator();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now);
+          osc.connect(noteGain);
+          osc.start(now);
+          osc.stop(now + duration + 0.1);
+        }
+      }
+    }
+
+    const audioSynth = new AmbientChimesSynth();
+  </script>
+
+  <script>
+    // Vertex Shader
+    const vsSource = `
+      attribute vec2 a_position;
+      varying vec2 v_uv;
+      void main() {
+        v_uv = (a_position + 1.0) * 0.5;
+        gl_Position = vec4(a_position, 0.0, 1.0);
+      }
+    `;
+
+    // Fragment Shader: Bold, Ultra-Vivid 60s Liquid Marble Poster Art with guaranteed Palette Switching
+    const fsSource = `
+      #ifdef GL_OES_standard_derivatives
+      #extension GL_OES_standard_derivatives : enable
+      #endif
+      precision highp float;
+      varying vec2 v_uv;
+
+      uniform vec2 u_resolution;
+      uniform float u_time;
+      uniform int u_palette;
+      uniform float u_speed;
+      uniform float u_freq;
+      uniform float u_void_level;
+
+      #define MAX_RIPPLES 8
+      uniform vec3 u_ripples[MAX_RIPPLES];
+      uniform float u_ripple_intensity[MAX_RIPPLES];
+
+      // Smooth 2D Simplex Noise (Zero high-frequency noise grains)
+      vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+      vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+      vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+
+      float snoise(vec2 v) {
+        const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
+        vec2 i  = floor(v + dot(v, C.yy));
+        vec2 x0 = v - i + dot(i, C.xx);
+        vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+        vec4 x12 = x0.xyxy + C.xxzz;
+        x12.xy -= i1;
+        i = mod289(i);
+        vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));
+        vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
+        m = m * m; m = m * m;
+        vec3 x = 2.0 * fract(p * C.www) - 1.0;
+        vec3 h = abs(x) - 0.5;
+        vec3 ox = floor(x + 0.5);
+        vec3 a0 = x - ox;
+        m *= 1.79284291400159 - 0.85373472095314 * (a0*a0 + h*h);
+        vec3 g;
+        g.x = a0.x * x0.x + h.x * x0.y;
+        g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+        return 130.0 * dot(m, g);
+      }
+
+      // Macro liquid currents without tiny static
+      float smoothLiquidFlow(vec2 p) {
+        float f = 0.0;
+        f += 0.65 * snoise(p);
+        f += 0.35 * snoise(p * 2.05 + vec2(1.7, 3.2));
+        return f;
+      }
+
+      // Crisp hash for round twinkling stars
+      float hash21(vec2 p) {
+        p = fract(p * vec2(123.34, 456.21));
+        p += dot(p, p + 45.32);
+        return fract(p.x * p.y);
+      }
+
+      // Discrete 6-Color Palettes matching user selection
+      vec3 getPosterColor(float idx, int pal) {
+        float i = mod(floor(idx), 6.0);
+
+        // Palette 0: Exact Artwork (Lemon Yellow, Shocking Pink, Velvet Purple, Electric Cyan, Lime, Blazing Orange)
+        if (pal == 0) {
+          if (i < 0.5) return vec3(1.0, 0.93, 0.00);  // Lemon Yellow
+          if (i < 1.5) return vec3(1.0, 0.05, 0.58);  // Shocking Pink
+          if (i < 2.5) return vec3(0.48, 0.10, 0.78);  // Velvet Purple
+          if (i < 3.5) return vec3(0.00, 0.78, 1.00);  // Electric Cyan
+          if (i < 4.5) return vec3(0.00, 0.90, 0.35);  // Lime Green
+          return vec3(1.0, 0.38, 0.00);               // Sunset Orange
+        }
+        // Palette 1: Deep Violet / Cyber Magenta
+        if (pal == 1) {
+          if (i < 0.5) return vec3(0.95, 0.08, 0.72);
+          if (i < 1.5) return vec3(0.42, 0.04, 0.82);
+          if (i < 2.5) return vec3(0.20, 0.10, 0.95);
+          if (i < 3.5) return vec3(0.68, 0.22, 1.00);
+          if (i < 4.5) return vec3(0.12, 0.65, 0.98);
+          return vec3(1.00, 0.30, 0.85);
+        }
+        // Palette 2: Acid Lime / Neon Forest
+        if (pal == 2) {
+          if (i < 0.5) return vec3(0.10, 0.98, 0.30);
+          if (i < 1.5) return vec3(0.85, 1.00, 0.05);
+          if (i < 2.5) return vec3(0.00, 0.80, 0.65);
+          if (i < 3.5) return vec3(0.05, 0.45, 0.25);
+          if (i < 4.5) return vec3(0.60, 0.90, 0.15);
+          return vec3(0.00, 1.00, 0.80);
+        }
+        // Palette 3: Psychedelic Sunset
+        if (pal == 3) {
+          if (i < 0.5) return vec3(1.00, 0.25, 0.05);
+          if (i < 1.5) return vec3(1.00, 0.75, 0.00);
+          if (i < 2.5) return vec3(0.95, 0.05, 0.35);
+          if (i < 3.5) return vec3(1.00, 0.45, 0.10);
+          if (i < 4.5) return vec3(0.80, 0.10, 0.50);
+          return vec3(1.00, 0.90, 0.15);
+        }
+        // Palette 4: Neon Cosmic (Cyan, Magenta, Ultra Blue)
+        if (pal == 4) {
+          if (i < 0.5) return vec3(0.00, 0.95, 1.00);
+          if (i < 1.5) return vec3(1.00, 0.08, 0.65);
+          if (i < 2.5) return vec3(0.15, 0.25, 1.00);
+          if (i < 3.5) return vec3(0.00, 0.55, 0.95);
+          if (i < 4.5) return vec3(0.90, 0.80, 1.00);
+          return vec3(0.70, 0.00, 0.95);
+        }
+        // Palette 5: Trippy Rainbow
+        if (i < 0.5) return vec3(1.00, 0.15, 0.15);
+        if (i < 1.5) return vec3(1.00, 0.60, 0.00);
+        if (i < 2.5) return vec3(0.95, 0.95, 0.00);
+        if (i < 3.5) return vec3(0.10, 0.85, 0.20);
+        if (i < 4.5) return vec3(0.10, 0.55, 1.00);
+        return vec3(0.65, 0.15, 0.90);
+      }
+
+      void main() {
+        vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / min(u_resolution.x, u_resolution.y);
+        float t = u_time * 0.16 * u_speed;
+
+        // Ripples and Vortex Distortions from Clicks / Touches
+        vec2 rippleShift = vec2(0.0);
+        float rippleInfluence = 0.0;
+
+        for (int i = 0; i < MAX_RIPPLES; i++) {
+          if (u_ripple_intensity[i] > 0.01) {
+            vec2 rPos = (u_ripples[i].xy - 0.5 * u_resolution.xy) / min(u_resolution.x, u_resolution.y);
+            float d = length(uv - rPos);
+            float age = u_time - u_ripples[i].z;
+
+            float waveSpeed = 0.92;
+            float waveFront = age * waveSpeed;
+            float ringWidth = 0.24 + age * 0.14;
+            float ring = exp(-pow((d - waveFront) / ringWidth, 2.0));
+
+            vec2 delta = uv - rPos + vec2(0.0001);
+            vec2 tangent = vec2(-delta.y, delta.x) / (d + 0.18);
+
+            float decay = exp(-age * 0.52) * u_ripple_intensity[i];
+            rippleShift += (tangent * 0.26 + normalize(delta) * ring * 0.24) * decay;
+            rippleInfluence += ring * decay;
+          }
+        }
+
+        // Domain Warping for Broad Silky Fluid Ribbons
+        vec2 pos = uv * 1.48 * u_freq + rippleShift;
+
+        vec2 q = vec2(
+          smoothLiquidFlow(pos + vec2(t * 0.35, t * 0.22)),
+          smoothLiquidFlow(pos + vec2(4.1, 2.7) + vec2(-t * 0.28, t * 0.32))
+        );
+
+        vec2 r = vec2(
+          smoothLiquidFlow(pos + 1.7 * q + vec2(2.3, 7.1) + vec2(t * 0.18, -t * 0.24)),
+          smoothLiquidFlow(pos + 1.7 * q + vec2(6.4, 1.5) + vec2(-t * 0.25, t * 0.16))
+        );
+
+        float field = smoothLiquidFlow(pos + 2.0 * r);
+
+        // Cosmic Deep Void Regions (Black Rifts)
+        float voidField = snoise(pos * 0.72 + r * 1.05) + field * 0.45;
+        float voidCutoff = mix(-0.28, 0.36, u_void_level);
+        float isVoid = smoothstep(voidCutoff + 0.12, voidCutoff - 0.06, voidField);
+
+        // Clean Twinkling Stars in Cosmic Void
+        vec2 starGrid = floor(gl_FragCoord.xy * 0.065);
+        float starSeed = hash21(starGrid);
+        vec2 starLocal = fract(gl_FragCoord.xy * 0.065) - 0.5;
+        float starDist = length(starLocal);
+        float starRadius = 0.12 + 0.26 * hash21(starGrid + 8.1);
+        float starTwinkle = sin(u_time * 2.8 + starSeed * 25.0) * 0.5 + 0.5;
+        float starPoint = smoothstep(starRadius, 0.0, starDist) * step(0.87, starSeed);
+
+        vec3 starColor = vec3(1.0, 0.95, 0.3);
+        if (hash21(starGrid + 1.2) > 0.6) starColor = vec3(0.0, 0.85, 1.0);
+        if (hash21(starGrid + 3.4) > 0.8) starColor = vec3(1.0, 0.2, 0.7);
+        vec3 stardust = starColor * starPoint * (starTwinkle * 0.7 + 0.3);
+
+        // Bold Posterized Banding
+        float bandDensity = 3.9 * u_freq;
+        float bandCoord = (field * 2.1 + length(q) * 1.3 + length(r) * 0.75) * bandDensity + rippleInfluence * 0.55;
+        
+        float bandIndex = floor(bandCoord);
+        float bandFrac = fract(bandCoord);
+
+        // Crisp Black Comic Inking between ribbons
+        float edgeDist = min(bandFrac, 1.0 - bandFrac);
+        float lineThick = 0.09;
+        float outline = smoothstep(lineThick, 0.02, edgeDist);
+
+        vec3 ribbonColor = getPosterColor(bandIndex, u_palette);
+
+        // Amoeba Droplets / Nested Liquid Cells
+        vec2 dropPos = pos * 3.1 + r * 1.6;
+        float dropNoise = snoise(dropPos);
+        float dropCenter = smoothstep(0.58, 0.65, dropNoise);
+        float dropRim = smoothstep(0.51, 0.58, dropNoise) - smoothstep(0.65, 0.72, dropNoise);
+
+        vec3 spotColor = getPosterColor(bandIndex + 2.0, u_palette);
+        ribbonColor = mix(ribbonColor, spotColor, dropCenter * 0.92);
+        ribbonColor = mix(ribbonColor, vec3(0.02), dropRim * 0.92);
+
+        // Ink Outline
+        ribbonColor = mix(ribbonColor, vec3(0.02), outline * 0.96);
+
+        // Blend with Cosmic Star Void
+        vec3 finalColor = mix(ribbonColor, vec3(0.015) + stardust, isVoid);
+
+        // Dark edge around cosmic void
+        float voidBorder = smoothstep(0.0, 0.07, abs(voidField - voidCutoff));
+        finalColor = mix(vec3(0.01), finalColor, voidBorder);
+
+        gl_FragColor = vec4(finalColor, 1.0);
+      }
+    `;
+  </script>
+
+  <script>
+    const canvas = document.getElementById('glcanvas');
+    const gl = canvas.getContext('webgl', { antialias: true, powerPreference: 'high-performance' });
+
+    if (!gl) {
+      document.body.innerHTML = '<div class="p-8 text-white text-center">お使いのブラウザはWebGLに対応していません。</div>';
+    }
+
+    function createShader(gl, type, source) {
+      const shader = gl.createShader(type);
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        console.error('Shader compile error:', gl.getShaderInfoLog(shader));
+        gl.deleteShader(shader);
+        return null;
+      }
+      return shader;
+    }
+
+    function createProgram(gl, vs, fs) {
+      const program = gl.createProgram();
+      gl.attachShader(program, vs);
+      gl.attachShader(program, fs);
+      gl.linkProgram(program);
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        console.error('Program link error:', gl.getProgramInfoLog(program));
+        return null;
+      }
+      return program;
+    }
+
+    const vs = createShader(gl, gl.VERTEX_SHADER, vsSource);
+    const fs = createShader(gl, gl.FRAGMENT_SHADER, fsSource);
+    const program = createProgram(gl, vs, fs);
+
+    const positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+      -1, -1,
+       1, -1,
+      -1,  1,
+      -1,  1,
+       1, -1,
+       1,  1
+    ]), gl.STATIC_DRAW);
+
+    const positionLocation = gl.getAttribLocation(program, 'a_position');
+    gl.enableVertexAttribArray(positionLocation);
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+    // Uniform locations
+    const uResolutionLoc = gl.getUniformLocation(program, 'u_resolution');
+    const uTimeLoc = gl.getUniformLocation(program, 'u_time');
+    const uPaletteLoc = gl.getUniformLocation(program, 'u_palette');
+    const uSpeedLoc = gl.getUniformLocation(program, 'u_speed');
+    const uFreqLoc = gl.getUniformLocation(program, 'u_freq');
+    const uVoidLevelLoc = gl.getUniformLocation(program, 'u_void_level');
+
+    const MAX_RIPPLES = 8;
+    const uRipplesLoc = gl.getUniformLocation(program, 'u_ripples');
+    const uRippleIntensityLoc = gl.getUniformLocation(program, 'u_ripple_intensity');
+
+    // Ripples state
+    const ripples = [];
+    for (let i = 0; i < MAX_RIPPLES; i++) {
+      ripples.push({ x: 0, y: 0, birthTime: -100, intensity: 0 });
+    }
+    let nextRippleIndex = 0;
+    const startTime = performance.now();
+
+    function addRipple(x, y, intensity = 1.0) {
+      const now = (performance.now() - startTime) * 0.001;
+      ripples[nextRippleIndex] = {
+        x: x * window.devicePixelRatio,
+        y: (window.innerHeight - y) * window.devicePixelRatio,
+        birthTime: now,
+        intensity: intensity
+      };
+      nextRippleIndex = (nextRippleIndex + 1) % MAX_RIPPLES;
+      audioSynth.playRippleNote(intensity, y / window.innerHeight);
+    }
+  </script>
+
+  <script>
+    let currentPalette = 0;
+    let animSpeed = 1.0;
+    let fractalFreq = 1.0;
+    let voidLevel = 0.45;
+    let isInteracting = false;
+    let lastInteractTime = performance.now();
+    let autoRelaxMode = true;
+
+    function triggerIdleMeditationPulse() {
+      const now = performance.now();
+      if (autoRelaxMode && !isInteracting && (now - lastInteractTime > 4500)) {
+        const cx = window.innerWidth * (0.3 + Math.random() * 0.4);
+        const cy = window.innerHeight * (0.3 + Math.random() * 0.4);
+        addRipple(cx, cy, 0.65);
+        lastInteractTime = now;
+      }
+    }
+
+    function resizeCanvas() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2.0);
+      const displayWidth = Math.floor(window.innerWidth * dpr);
+      const displayHeight = Math.floor(window.innerHeight * dpr);
+
+      if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+        canvas.width = displayWidth;
+        canvas.height = displayHeight;
+        gl.viewport(0, 0, canvas.width, canvas.height);
+      }
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Mouse & Touch Interaction
+    let lastMoveTime = 0;
+    function handlePointer(x, y, intensity = 1.0) {
+      lastInteractTime = performance.now();
+      addRipple(x, y, intensity);
+    }
+
+    canvas.addEventListener('pointerdown', (e) => {
+      isInteracting = true;
+      audioSynth.init();
+      handlePointer(e.clientX, e.clientY, 1.2);
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      if (!isInteracting) return;
+      const now = performance.now();
+      if (now - lastMoveTime > 120) {
+        handlePointer(e.clientX, e.clientY, 0.6);
+        lastMoveTime = now;
+      }
+    });
+
+    window.addEventListener('pointerup', () => { isInteracting = false; });
+    window.addEventListener('pointercancel', () => { isInteracting = false; });
+
+    canvas.addEventListener('touchstart', (e) => {
+      audioSynth.init();
+      for (let i = 0; i < e.touches.length; i++) {
+        const touch = e.touches[i];
+        handlePointer(touch.clientX, touch.clientY, 1.0);
+      }
+    }, { passive: true });
+
+    // Overlay dismiss
+    const startOverlay = document.getElementById('startOverlay');
+    const dismissOverlayBtn = document.getElementById('dismissOverlayBtn');
+    if (dismissOverlayBtn) {
+      dismissOverlayBtn.addEventListener('click', () => {
+        audioSynth.init();
+        if (startOverlay) {
+          startOverlay.style.opacity = '0';
+          setTimeout(() => startOverlay.style.display = 'none', 700);
+        }
+        addRipple(window.innerWidth / 2, window.innerHeight / 2, 1.3);
+      });
+    }
+
+    // Tabs Switching (Visual vs Audio)
+    const tabVisualBtn = document.getElementById('tabVisualBtn');
+    const tabAudioBtn = document.getElementById('tabAudioBtn');
+    const visualTabPanel = document.getElementById('visualTabPanel');
+    const audioTabPanel = document.getElementById('audioTabPanel');
+
+    if (tabVisualBtn && tabAudioBtn && visualTabPanel && audioTabPanel) {
+      tabVisualBtn.addEventListener('click', () => {
+        tabVisualBtn.className = "px-3 py-1.5 rounded-xl text-xs font-bold transition bg-pink-500/80 text-white shadow";
+        tabAudioBtn.className = "px-3 py-1.5 rounded-xl text-xs font-bold transition bg-white/10 text-white/70 hover:bg-white/20";
+        visualTabPanel.classList.remove('hidden');
+        audioTabPanel.classList.add('hidden');
+      });
+
+      tabAudioBtn.addEventListener('click', () => {
+        tabAudioBtn.className = "px-3 py-1.5 rounded-xl text-xs font-bold transition bg-pink-500/80 text-white shadow";
+        tabVisualBtn.className = "px-3 py-1.5 rounded-xl text-xs font-bold transition bg-white/10 text-white/70 hover:bg-white/20";
+        audioTabPanel.classList.remove('hidden');
+        visualTabPanel.classList.add('hidden');
+        audioSynth.init();
+      });
+    }
+
+    // Sound toggle
+    const soundToggleBtn = document.getElementById('soundToggleBtn');
+    const soundIconOn = document.getElementById('soundIconOn');
+    const soundIconOff = document.getElementById('soundIconOff');
+    const soundLabel = document.getElementById('soundLabel');
+
+    if (soundToggleBtn) {
+      soundToggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isMuted = audioSynth.toggleMute();
+        if (soundIconOn && soundIconOff && soundLabel) {
+          if (isMuted) {
+            soundIconOn.classList.add('hidden');
+            soundIconOff.classList.remove('hidden');
+            soundLabel.textContent = 'サウンド OFF';
+          } else {
+            soundIconOn.classList.remove('hidden');
+            soundIconOff.classList.add('hidden');
+            soundLabel.textContent = 'サウンド ON';
+          }
+        }
+      });
+    }
+
+    // Drawer Controls
+    const toggleControlsBtn = document.getElementById('toggleControlsBtn');
+    const controlsDrawer = document.getElementById('controlsDrawer');
+    const closeDrawerBtn = document.getElementById('closeDrawerBtn');
+
+    if (toggleControlsBtn && controlsDrawer) {
+      toggleControlsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        controlsDrawer.classList.toggle('hidden');
+      });
+    }
+    if (closeDrawerBtn && controlsDrawer) {
+      closeDrawerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        controlsDrawer.classList.add('hidden');
+      });
+    }
+
+    // Palette switching
+    const paletteButtons = document.querySelectorAll('.palette-btn');
+    paletteButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        paletteButtons.forEach(b => {
+          b.classList.remove('ring-2', 'ring-white', 'shadow-lg');
+          b.classList.add('ring-1', 'ring-white/20');
+        });
+        btn.classList.add('ring-2', 'ring-white', 'shadow-lg');
+        btn.classList.remove('ring-1', 'ring-white/20');
+        
+        currentPalette = parseInt(btn.getAttribute('data-palette'), 10);
+        addRipple(window.innerWidth / 2, window.innerHeight / 2, 1.2);
+      });
+    });
+
+    // Visual sliders
+    const speedSlider = document.getElementById('speedSlider');
+    const speedValue = document.getElementById('speedValue');
+    if (speedSlider && speedValue) {
+      speedSlider.addEventListener('input', (e) => {
+        animSpeed = parseFloat(e.target.value);
+        speedValue.textContent = animSpeed.toFixed(1) + 'x';
+      });
+    }
+
+    const freqSlider = document.getElementById('freqSlider');
+    const freqValue = document.getElementById('freqValue');
+    if (freqSlider && freqValue) {
+      freqSlider.addEventListener('input', (e) => {
+        fractalFreq = parseFloat(e.target.value);
+        freqValue.textContent = fractalFreq.toFixed(1) + 'x';
+      });
+    }
+
+    const voidSlider = document.getElementById('voidSlider');
+    const voidValue = document.getElementById('voidValue');
+    if (voidSlider && voidValue) {
+      voidSlider.addEventListener('input', (e) => {
+        voidLevel = parseFloat(e.target.value);
+        voidValue.textContent = voidLevel > 0.6 ? '深宇宙' : (voidLevel < 0.25 ? '淡い' : '標準');
+      });
+    }
+
+    // Audio sliders
+    const masterVolSlider = document.getElementById('masterVolSlider');
+    const masterVolVal = document.getElementById('masterVolVal');
+    if (masterVolSlider && masterVolVal) {
+      masterVolSlider.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        masterVolVal.textContent = Math.round(val * 100) + '%';
+        audioSynth.setMasterVolume(val);
+      });
+    }
+
+    const droneVolSlider = document.getElementById('droneVolSlider');
+    const droneVolVal = document.getElementById('droneVolVal');
+    if (droneVolSlider && droneVolVal) {
+      droneVolSlider.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        droneVolVal.textContent = Math.round(val * 100) + '%';
+        audioSynth.setDroneVolume(val);
+      });
+    }
+
+    // Tuning Base Buttons (432Hz vs 528Hz)
+    const freqBaseButtons = document.querySelectorAll('.freq-btn');
+    freqBaseButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        freqBaseButtons.forEach(b => {
+          b.className = "freq-btn py-2 rounded-xl text-xs font-semibold bg-white/5 ring-1 ring-white/10 text-white/70";
+        });
+        btn.className = "freq-btn active py-2 rounded-xl text-xs font-semibold bg-white/20 ring-1 ring-white/60 text-white";
+        const base = parseInt(btn.getAttribute('data-base'), 10);
+        audioSynth.setBaseFreq(base);
+        addRipple(window.innerWidth / 2, window.innerHeight / 2, 0.8);
+      });
+    });
+
+    // Timbre & Scale Select
+    const scaleSelect = document.getElementById('scaleSelect');
+    if (scaleSelect) {
+      scaleSelect.addEventListener('change', (e) => {
+        audioSynth.timbreMode = e.target.value;
+        addRipple(window.innerWidth / 2, window.innerHeight / 2, 1.0);
+      });
+    }
+
+    // Decay / Reverb Slider
+    const decaySlider = document.getElementById('decaySlider');
+    const decayVal = document.getElementById('decayVal');
+    if (decaySlider && decayVal) {
+      decaySlider.addEventListener('input', (e) => {
+        audioSynth.decayTime = parseFloat(e.target.value);
+        decayVal.textContent = audioSynth.decayTime.toFixed(1) + '秒';
+      });
+    }
+
+    // Auto Mode Toggle
+    const autoModeToggle = document.getElementById('autoModeToggle');
+    if (autoModeToggle) {
+      autoModeToggle.addEventListener('change', (e) => {
+        autoRelaxMode = e.target.checked;
+      });
+    }
+
+    // Burst & Reset Buttons
+    const burstBtn = document.getElementById('burstBtn');
+    if (burstBtn) {
+      burstBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        addRipple(window.innerWidth / 2, window.innerHeight / 2, 2.0);
+      });
+    }
+
+    const clearBtn = document.getElementById('clearBtn');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        for (let i = 0; i < MAX_RIPPLES; i++) {
+          ripples[i].birthTime = -100;
+          ripples[i].intensity = 0;
+        }
+      });
+    }
+
+    // Fullscreen Toggle
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    if (fullscreenBtn) {
+      fullscreenBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        } else {
+          if (document.exitFullscreen) {
+            document.exitFullscreen();
+          }
+        }
+      });
+    }
+  </script>
+
+  <script>
+    const ripplesFlat = new Float32Array(MAX_RIPPLES * 3);
+    const intensitiesFlat = new Float32Array(MAX_RIPPLES);
+
+    function renderLoop() {
+      const now = (performance.now() - startTime) * 0.001;
+
+      triggerIdleMeditationPulse();
+
+      gl.useProgram(program);
+
+      gl.uniform2f(uResolutionLoc, canvas.width, canvas.height);
+      gl.uniform1f(uTimeLoc, now);
+      gl.uniform1i(uPaletteLoc, currentPalette);
+      gl.uniform1f(uSpeedLoc, animSpeed);
+      gl.uniform1f(uFreqLoc, fractalFreq);
+      gl.uniform1f(uVoidLevelLoc, voidLevel);
+
+      for (let i = 0; i < MAX_RIPPLES; i++) {
+        ripplesFlat[i * 3 + 0] = ripples[i].x;
+        ripplesFlat[i * 3 + 1] = ripples[i].y;
+        ripplesFlat[i * 3 + 2] = ripples[i].birthTime;
+        intensitiesFlat[i] = ripples[i].intensity;
+      }
+
+      gl.uniform3fv(uRipplesLoc, ripplesFlat);
+      gl.uniform1fv(uRippleIntensityLoc, intensitiesFlat);
+
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+      requestAnimationFrame(renderLoop);
+    }
+
+    window.onload = function() {
+      setTimeout(() => addRipple(window.innerWidth * 0.45, window.innerHeight * 0.48, 0.9), 400);
+      renderLoop();
+    };
+  </script>
+</body>
+</html>
